@@ -10,6 +10,7 @@ function Mesh({ mouse }: { mouse: number[] }) {
     const meshRef = useRef<any>(null);
     const texture = useTexture(imageSrc);
     const { width, height } = texture.image;
+    const lerpedMouse = useRef([0.5, 0.5]);
 
     const scale = useAspect(
         width,
@@ -28,8 +29,13 @@ function Mesh({ mouse }: { mouse: number[] }) {
 
     useFrame(() => {
         if (!meshRef.current) return;
+
+        const speed = 0.07;
+        lerpedMouse.current[0] += (mouse[0] - lerpedMouse.current[0]) * speed;
+        lerpedMouse.current[1] += (mouse[1] - lerpedMouse.current[1]) * speed;
+
         meshRef.current.material.uniforms.uTime.value += 0.04;
-        meshRef.current.material.uniforms.uMouse.value = mouse;
+        meshRef.current.material.uniforms.uMouse.value = lerpedMouse.current;
     });
 
     return (
