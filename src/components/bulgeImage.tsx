@@ -7,16 +7,11 @@ import { fragment, vertex } from "../shaders/bulgeMaterial";
 //image import
 import imageSrc from "../assets/sala.jpg"
 
-const INITIAL_MOUSE_POSITION = [0.5, 0.5];
-const INITIAL_RADIUS = 0.95;
-const INITIAL_STRENGTH = 1.1;
-const INITIAL_BULGE = 1;
-
 function Mesh({ mouse }: { mouse: number[] }) {
     const meshRef = useRef<any>(null);
     const texture = useTexture(imageSrc);
     const { width, height } = texture.image;
-    const lerpedMouse = useRef(INITIAL_MOUSE_POSITION);
+    const lerpedMouse = useRef([0.5, 0.5]);
 
     const scale = useAspect(
         width,
@@ -27,10 +22,10 @@ function Mesh({ mouse }: { mouse: number[] }) {
     const uniforms = useRef({
         uTime: { value: 0 },
         uTexture: { value: texture },
-        uMouse: { value: INITIAL_MOUSE_POSITION },
-        uRadius: { value: INITIAL_RADIUS },
-        uStrength: { value: INITIAL_STRENGTH },
-        uBulge: { value: INITIAL_BULGE },
+        uMouse: { value: [0.5, 0.5] },
+        uRadius: { value: 0.95 },
+        uStrength: { value: 1.1 },
+        uBulge: { value: 1 },
     });
 
     useFrame(() => {
@@ -91,7 +86,7 @@ export default function BulgeImage() {
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
                 setMouse([x, y]);
             } else {
-                setMouse(INITIAL_MOUSE_POSITION);
+                setMouse([0.5, 0.5]);
             }
         };
 
