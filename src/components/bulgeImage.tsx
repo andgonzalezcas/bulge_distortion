@@ -1,16 +1,22 @@
+import { gsap } from "gsap";
 import { useFrame, Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useState } from "react";
 import { useAspect, useTexture } from '@react-three/drei';
+import { Suspense, useEffect, useRef, useState } from "react";
 import { fragment, vertex } from "../shaders/bulgeMaterial";
 
 //image import
 import imageSrc from "../assets/sala.jpg"
 
+const INITIAL_MOUSE_POSITION = [0.5, 0.5];
+const INITIAL_RADIUS = 0.95;
+const INITIAL_STRENGTH = 1.1;
+const INITIAL_BULGE = 1;
+
 function Mesh({ mouse }: { mouse: number[] }) {
     const meshRef = useRef<any>(null);
     const texture = useTexture(imageSrc);
     const { width, height } = texture.image;
-    const lerpedMouse = useRef([0.5, 0.5]);
+    const lerpedMouse = useRef(INITIAL_MOUSE_POSITION);
 
     const scale = useAspect(
         width,
@@ -21,10 +27,10 @@ function Mesh({ mouse }: { mouse: number[] }) {
     const uniforms = useRef({
         uTime: { value: 0 },
         uTexture: { value: texture },
-        uMouse: { value: [0.5, 0.5] },
-        uRadius: { value: 0.95 },
-        uStrength: { value: 1.1 },
-        uBulge: { value: 1 },
+        uMouse: { value: INITIAL_MOUSE_POSITION },
+        uRadius: { value: INITIAL_RADIUS },
+        uStrength: { value: INITIAL_STRENGTH },
+        uBulge: { value: INITIAL_BULGE },
     });
 
     useFrame(() => {
@@ -54,6 +60,22 @@ function Mesh({ mouse }: { mouse: number[] }) {
 export default function BulgeImage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [mouse, setMouse] = useState([0.5, 0.5]);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (!canvasRef.current) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(canvasRef.current);
+
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         if (!canvasRef.current) return;
@@ -69,7 +91,7 @@ export default function BulgeImage() {
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
                 setMouse([x, y]);
             } else {
-                setMouse([0.5, 0.5]);
+                setMouse(INITIAL_MOUSE_POSITION);
             }
         };
 
@@ -80,13 +102,40 @@ export default function BulgeImage() {
         };
     }, []);
 
+    useEffect(() => {
+        if (!canvasRef.current) return;
+
+        const targetScale = isVisible ? 0 : 1;
+        const targetOpacity = isVisible ? 0 : 1;
+        animateCanvas(targetScale, targetOpacity);
+    }, [isVisible]);
+
+    const animateCanvas = (scale: number, opacity: number) => {
+        gsap.killTweensOf(canvasRef.current);
+
+        gsap.fromTo(
+            canvasRef.current,
+            { scale: scale, opacity: opacity, borderRadius: "32px" },
+            {
+                scale: scale === 0 ? 1 : 0,
+                opacity: opacity === 0 ? 1 : 0,
+                duration: 1.5,
+                ease: "power3.out"
+            }
+        );
+    };
+
     return (
-        <Canvas ref={canvasRef} style={{ width: "100%", height: "100%" }}>
+        <Canvas ref={canvasRef} style={{
+            width: "100%",
+            height: "100%",
+            borderRadius: "32px",
+            overflow: "hidden"
+        }}>
             <ambientLight />
             <Suspense fallback={null}>
                 <Mesh mouse={mouse} />
             </Suspense>
         </Canvas>
-
     );
 }
